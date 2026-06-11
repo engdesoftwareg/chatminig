@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Chatbot · MiniMax M3</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0f172a; --card:#1e293b; --accent:#6366f1; --text:#e2e8f0; --muted:#94a3b8; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b);
+      color: var(--text); min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .card {
+      background: var(--card); border-radius: 16px; width: 100%; max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden;
+    }
+    .header { padding: 20px 24px; border-bottom: 1px solid #334155; display:flex; align-items:center; justify-content:space-between; }
+    .header h1 { font-size: 18px; }
+    .header small { color: var(--muted); display:block; font-weight:400; font-size:12px; }
+    .body { padding: 24px; }
+    input, button, textarea {
+      font: inherit; width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid #334155; background: #0f172a; color: var(--text); margin-bottom: 12px;
+    }
+    button {
+      background: var(--accent); border: none; color: #fff; font-weight: 600; cursor: pointer;
+      transition: opacity .2s;
+    }
+    button:hover { opacity: .9; }
+    button.ghost { background: transparent; border: 1px solid #475569; color: var(--muted); width:auto; padding:8px 12px; margin:0; font-size:13px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs button { background:#0f172a; color:var(--muted); border:1px solid #334155; }
+    .tabs button.active { background: var(--accent); color:#fff; border-color: var(--accent); }
+    .msg-area { height: 360px; overflow-y: auto; display:flex; flex-direction:column; gap:10px; padding: 4px; margin-bottom: 14px; }
+    .msg { padding: 10px 14px; border-radius: 12px; max-width: 85%; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+    .msg.user { background: var(--accent); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg.bot { background: #0f172a; align-self: flex-start; border:1px solid #334155; border-bottom-left-radius: 4px; }
+    .msg.sys { color: var(--muted); font-size: 13px; align-self:center; background:transparent; }
+    .row { display:flex; gap:8px; }
+    .row textarea { resize:none; margin:0; height: 48px; }
+    .row button { width: 70px; margin:0; }
+    .error { color:#fca5a5; font-size:13px; margin-bottom:10px; min-height: 18px; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div>
+        <h1>🤖 Meu Chatbot</h1>
+        <small>powered by MiniMax M3 + Supabase</small>
+      </div>
+      <button id="logoutBtn" class="ghost hidden">Sair</button>
+    </div>
+    <div class="body">
+
+      <!-- LOGIN -->
+      <div id="authView">
+        <div class="tabs">
+          <button id="tabLogin" class="active">Entrar</button>
+          <button id="tabSignup">Criar conta</button>
+        </div>
+        <div class="error" id="authError"></div>
+        <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" />
+        <input id="password" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" />
+        <button id="authBtn">Entrar</button>
+      </div>
+
+      <!-- CHAT -->
+      <div id="chatView" class="hidden">
+        <div class="msg-area" id="messages">
+          <div class="msg sys">Olá! Faça uma pergunta que eu respondo. 👋</div>
+        </div>
+        <div class="error" id="chatError"></div>
+        <div class="row">
+          <textarea id="prompt" placeholder="Digite sua pergunta..."></textarea>
+          <button id="sendBtn">Enviar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // ===== CONFIG (já preenchido com seu projeto) =====
+    const SUPABASE_URL = "https://gdryogwjzaaacpwkrihv.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_hdBFKb6YtmGdO8_MHiFxoQ_fYN7CavM";
+    // ==================================================
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const $ = (id) => document.getElementById(id);
+    let mode = "login";
+    const history = [];
+
+    // --- alternar abas login/cadastro ---
+    $("tabLogin").onclick = () => setMode("login");
+    $("tabSignup").onclick = () => setMode("signup");
+    function setMode(m) {
+      mode = m;
+      $("tabLogin").classList.toggle("active", m === "login");
+      $("tabSignup").classList.toggle("active", m === "signup");
+      $("authBtn").textContent = m === "login" ? "Entrar" : "Criar conta";
+      $("authError").textContent = "";
+    }
+
+    // --- autenticar ---
+    $("authBtn").onclick = async () => {
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      $("authError").textContent = "";
+      if (!email || !password) { $("authError").textContent = "Preencha email e senha."; return; }
+
+      $("authBtn").disabled = true;
+      try {
+        let res;
+        if (mode === "login") {
+          res = await supabase.auth.signInWithPassword({ email, password });
+        } else {
+          res = await supabase.auth.signUp({ email, password });
+        }
+        if (res.error) { $("authError").textContent = res.error.message; }
+        else if (mode === "signup" && !res.data.session) {
+          $("authError").textContent = "Conta criada! Verifique seu email para confirmar e depois entre.";
+        }
+      } finally {
+        $("authBtn").disabled = false;
+      }
+    };
+
+    $("logoutBtn").onclick = () => supabase.auth.signOut();
+
+    // --- controla qual tela aparece ---
+    supabase.auth.onAuthStateChange((_e, session) => {
+      const logged = !!session;
+      $("authView").classList.toggle("hidden", logged);
+      $("chatView").classList.toggle("hidden", !logged);
+      $("logoutBtn").classList.toggle("hidden", !logged);
+    });
+    supabase.auth.getSession();
+
+    // --- chat ---
+    function addMsg(text, cls) {
+      const div = document.createElement("div");
+      div.className = "msg " + cls;
+      div.textContent = text;
+      $("messages").appendChild(div);
+      $("messages").scrollTop = $("messages").scrollHeight;
+      return div;
+    }
+
+    async function send() {
+      const text = $("prompt").value.trim();
+      if (!text) return;
+      $("chatError").textContent = "";
+      $("prompt").value = "";
+      addMsg(text, "user");
+      history.push({ role: "user", content: text });
+
+      const thinking = addMsg("digitando...", "bot");
+      $("sendBtn").disabled = true;
+      try {
+        const { data, error } = await supabase.functions.invoke("chat", {
+          body: { messages: history },
+        });
+        if (error) throw error;
+        if (data.error) throw new Error(JSON.stringify(data.detail || data.error));
+        thinking.textContent = data.reply;
+        history.push({ role: "assistant", content: data.reply });
+      } catch (e) {
+        thinking.remove();
+        $("chatError").textContent = "Erro: " + (e.message || e);
+      } finally {
+        $("sendBtn").disabled = false;
+      }
+    }
+
+    $("sendBtn").onclick = send;
+    $("prompt").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+  </script>
+</body>
+</html>
