@@ -669,7 +669,7 @@
     } finally { $("authBtn").disabled = false; }
   };
   $("password").addEventListener("keydown", e => { if (e.key === "Enter") $("authBtn").click(); });
-  $("logoutBtn").onclick = () => { speechSynthesis.cancel(); supabase.auth.signOut(); };
+  $("logoutBtn").onclick = () => { stopSpeech(); supabase.auth.signOut(); };
 
   supabase.auth.onAuthStateChange((_e, session) => {
     const on = !!session;
@@ -711,34 +711,48 @@
   function hideJump() { jumpBtn?.remove(); jumpBtn = null; }
   msgs.addEventListener("scroll", () => { if (nearBottom()) hideJump(); });
 
-  /* ---- leitura em voz alta (Web Speech API, pt-BR) ---- */
-  let currentUtter = null, currentBtn = null;
-  function ptVoice() {
-    const vs = speechSynthesis.getVoices();
-    return vs.find(v => v.lang === "pt-BR") || vs.find(v => v.lang?.startsWith("pt")) || null;
-  }
-  speechSynthesis.onvoiceschanged = () => {};
+  /* ---- leitura em voz alta (voz neural MiniMax via Edge Function) ---- */
+  let currentAudio = null, currentBtn = null;
   function stopSpeech() {
-    speechSynthesis.cancel();
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
     currentBtn?.classList.remove("playing");
     if (currentBtn) currentBtn.querySelector(".lbl").textContent = "Ouvir";
-    currentUtter = null; currentBtn = null;
+    currentAudio = null; currentBtn = null;
   }
   function addSpeakButton(bubbleEl, plainText) {
     const btn = document.createElement("button");
     btn.className = "speak";
     btn.innerHTML = `🔊 <span class="lbl">Ouvir</span> <span class="bars"><i></i><i></i><i></i></span>`;
-    btn.onclick = () => {
+    let cachedUrl = null, loading = false;
+    btn.onclick = async () => {
       if (currentBtn === btn) { stopSpeech(); return; }   // já tocando este → para
       stopSpeech();                                        // para qualquer outro
-      const u = new SpeechSynthesisUtterance(plainText);
-      u.lang = "pt-BR"; u.rate = 1.04; u.pitch = 1;
-      const v = ptVoice(); if (v) u.voice = v;
-      u.onend = stopSpeech; u.onerror = stopSpeech;
-      currentUtter = u; currentBtn = btn;
-      btn.classList.add("playing");
-      btn.querySelector(".lbl").textContent = "Parar";
-      speechSynthesis.speak(u);
+      if (loading) return;
+      try {
+        if (!cachedUrl) {
+          loading = true;
+          btn.querySelector(".lbl").textContent = "Gerando voz...";
+          const { data, error } = await supabase.functions.invoke("tts", { body: { text: plainText } });
+          loading = false;
+          if (error || data?.error) throw new Error(data?.error || error.message);
+          // base64 → Blob mp3
+          const bin = atob(data.audio);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          cachedUrl = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+        }
+        const audio = new Audio(cachedUrl);
+        audio.onended = stopSpeech;
+        audio.onerror = stopSpeech;
+        currentAudio = audio; currentBtn = btn;
+        btn.classList.add("playing");
+        btn.querySelector(".lbl").textContent = "Parar";
+        await audio.play();
+      } catch (e) {
+        loading = false;
+        stopSpeech();
+        btn.querySelector(".lbl").textContent = "Erro — tentar de novo";
+      }
     };
     bubbleEl.appendChild(btn);
   }
