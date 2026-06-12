@@ -1,189 +1,478 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meu Chatbot · MiniMax M3</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --bg:#0f172a; --card:#1e293b; --accent:#6366f1; --text:#e2e8f0; --muted:#94a3b8; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e1b4b);
-      color: var(--text); min-height: 100vh;
-      display: flex; align-items: center; justify-content: center; padding: 16px;
-    }
-    .card {
-      background: var(--card); border-radius: 16px; width: 100%; max-width: 480px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden;
-    }
-    .header { padding: 20px 24px; border-bottom: 1px solid #334155; display:flex; align-items:center; justify-content:space-between; }
-    .header h1 { font-size: 18px; }
-    .header small { color: var(--muted); display:block; font-weight:400; font-size:12px; }
-    .body { padding: 24px; }
-    input, button, textarea {
-      font: inherit; width: 100%; padding: 12px 14px; border-radius: 10px;
-      border: 1px solid #334155; background: #0f172a; color: var(--text); margin-bottom: 12px;
-    }
-    button {
-      background: var(--accent); border: none; color: #fff; font-weight: 600; cursor: pointer;
-      transition: opacity .2s;
-    }
-    button:hover { opacity: .9; }
-    button.ghost { background: transparent; border: 1px solid #475569; color: var(--muted); width:auto; padding:8px 12px; margin:0; font-size:13px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tabs button { background:#0f172a; color:var(--muted); border:1px solid #334155; }
-    .tabs button.active { background: var(--accent); color:#fff; border-color: var(--accent); }
-    .msg-area { height: 360px; overflow-y: auto; display:flex; flex-direction:column; gap:10px; padding: 4px; margin-bottom: 14px; }
-    .msg { padding: 10px 14px; border-radius: 12px; max-width: 85%; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
-    .msg.user { background: var(--accent); align-self: flex-end; border-bottom-right-radius: 4px; }
-    .msg.bot { background: #0f172a; align-self: flex-start; border:1px solid #334155; border-bottom-left-radius: 4px; }
-    .msg.sys { color: var(--muted); font-size: 13px; align-self:center; background:transparent; }
-    .row { display:flex; gap:8px; }
-    .row textarea { resize:none; margin:0; height: 48px; }
-    .row button { width: 70px; margin:0; }
-    .error { color:#fca5a5; font-size:13px; margin-bottom:10px; min-height: 18px; }
-    .hidden { display:none; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexa · IA Inteligente</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050510;
+    --glass: rgba(255,255,255,.06);
+    --glass-border: rgba(255,255,255,.12);
+    --text: #f1f5f9;
+    --muted: #8b93a7;
+    --g1: #ff5ec4; --g2: #8b5cf6; --g3: #3b82f6; --g4: #06d6f6; --g5: #34d399;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ===== AURORA DE FUNDO ===== */
+  .aurora { position: fixed; inset: 0; z-index: 0; filter: blur(90px); opacity:.55; }
+  .aurora span {
+    position: absolute; border-radius: 50%;
+    mix-blend-mode: screen;
+    animation: float 18s ease-in-out infinite;
+  }
+  .aurora span:nth-child(1){ width:55vw; height:55vw; background:#ff5ec4; top:-20%; left:-12%; animation-delay:0s; }
+  .aurora span:nth-child(2){ width:48vw; height:48vw; background:#8b5cf6; top:30%; left:55%; animation-delay:-4s; }
+  .aurora span:nth-child(3){ width:42vw; height:42vw; background:#3b82f6; top:55%; left:-8%; animation-delay:-9s; }
+  .aurora span:nth-child(4){ width:38vw; height:38vw; background:#06d6f6; top:-10%; left:60%; animation-delay:-13s; }
+  @keyframes float {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(6vw,-5vh) scale(1.15); }
+    66% { transform: translate(-5vw,6vh) scale(.92); }
+  }
+
+  /* grão sutil */
+  .noise{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .stage { position: relative; z-index: 2; height: 100%; display:flex; align-items:center; justify-content:center; padding: 18px; }
+
+  /* ===== CARTÃO DE VIDRO ===== */
+  .card {
+    width: 100%; max-width: 520px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow: hidden;
+    animation: rise .8s cubic-bezier(.2,.9,.25,1.2);
+  }
+  @keyframes rise { from { opacity:0; transform: translateY(40px) scale(.96);} to { opacity:1; transform:none;} }
+
+  /* ===== TELA DE LOGIN ===== */
+  .hero { padding: 44px 40px 14px; text-align:center; }
+  #orb { width: 150px; height: 150px; margin: 0 auto 6px; display:block; }
+  .brand {
+    font-size: 34px; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(90deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g5),var(--g1));
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 6s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% center; } }
+  .tagline { color: var(--muted); font-size: 14px; margin-top: 6px; }
+
+  .form { padding: 22px 40px 40px; }
+  .tabs { display:flex; background: rgba(255,255,255,.05); border-radius: 14px; padding:5px; margin-bottom: 20px; }
+  .tabs button {
+    flex:1; padding: 10px; border:none; border-radius: 10px; cursor:pointer;
+    background: transparent; color: var(--muted); font: inherit; font-weight:600; font-size:14px;
+    transition: all .3s;
+  }
+  .tabs button.active {
+    color:#fff;
+    background: linear-gradient(90deg, var(--g2), var(--g3));
+    box-shadow: 0 6px 18px rgba(99,102,241,.4);
+  }
+
+  .field { position: relative; margin-bottom: 14px; }
+  .field input {
+    width:100%; padding: 15px 16px; font: inherit; font-size:15px;
+    background: rgba(255,255,255,.05); color: var(--text);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+    outline: none; transition: border .3s, box-shadow .3s;
+  }
+  .field input:focus { border-color: var(--g3); box-shadow: 0 0 0 4px rgba(59,130,246,.18); }
+  .field input::placeholder { color: #5c6478; }
+
+  .cta {
+    width:100%; padding: 15px; border:none; border-radius: 14px; cursor:pointer;
+    font: inherit; font-size: 15px; font-weight: 700; color:#fff;
+    background: linear-gradient(90deg,var(--g1),var(--g2),var(--g3),var(--g4));
+    background-size: 250% auto;
+    transition: background-position .5s, transform .15s, box-shadow .3s;
+    box-shadow: 0 10px 30px rgba(139,92,246,.45);
+  }
+  .cta:hover { background-position: right center; transform: translateY(-2px); }
+  .cta:active { transform: scale(.98); }
+  .cta:disabled { opacity:.6; cursor: wait; }
+
+  .feedback { min-height: 20px; font-size: 13px; text-align:center; margin-top: 12px; }
+  .feedback.err { color: #fda4af; }
+  .feedback.ok { color: #6ee7b7; }
+
+  /* ===== CHAT ===== */
+  .chat { display:flex; flex-direction:column; height: min(86vh, 760px); }
+  .chat-head {
+    display:flex; align-items:center; gap:12px;
+    padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.03);
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink:0;
+    background: conic-gradient(from 0deg, var(--g1),var(--g2),var(--g3),var(--g4),var(--g5),var(--g1));
+    animation: spin 5s linear infinite;
+    position: relative;
+  }
+  .avatar::after {
+    content:"✦"; position:absolute; inset:3px; border-radius:50%;
+    background: #0b0b18; display:flex; align-items:center; justify-content:center;
+    font-size: 16px; color:#fff;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .avatar::after { animation: spin 5s linear infinite reverse; }
+  .chat-head .who { flex:1; }
+  .chat-head .who b { font-size: 16px; display:block; }
+  .chat-head .who small { color:#34d399; font-size: 12px; display:flex; align-items:center; gap:5px; }
+  .dot { width:7px; height:7px; border-radius:50%; background:#34d399; box-shadow:0 0 8px #34d399; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity:.4; } }
+  .leave {
+    background: rgba(255,255,255,.06); color: var(--muted); border:1px solid rgba(255,255,255,.1);
+    padding: 8px 14px; border-radius: 10px; cursor:pointer; font: inherit; font-size: 13px;
+    transition: all .25s;
+  }
+  .leave:hover { color:#fff; border-color: rgba(255,255,255,.3); }
+
+  .msgs { flex:1; overflow-y:auto; padding: 22px 20px; display:flex; flex-direction:column; gap: 16px; scroll-behavior:smooth; }
+  .msgs::-webkit-scrollbar { width: 5px; }
+  .msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 99px; }
+
+  .bubble {
+    max-width: 86%; padding: 13px 17px; border-radius: 18px;
+    line-height: 1.6; font-size: 14.5px; word-wrap: break-word;
+    animation: pop .35s cubic-bezier(.2,.9,.3,1.3);
+  }
+  @keyframes pop { from { opacity:0; transform: translateY(14px) scale(.95);} to { opacity:1; transform:none;} }
+  .bubble.me {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--g2), var(--g3));
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 8px 24px rgba(99,102,241,.35);
+  }
+  .bubble.ai {
+    align-self: flex-start;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.09);
+    border-bottom-left-radius: 6px;
+  }
+  .bubble.ai strong { color:#c4b5fd; }
+  .bubble.ai code {
+    background: rgba(0,0,0,.4); padding: 2px 7px; border-radius: 6px;
+    font-family: ui-monospace, "Cascadia Code", monospace; font-size: 13px; color:#7dd3fc;
+  }
+  .bubble.ai pre {
+    background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08);
+    padding: 13px; border-radius: 12px; overflow-x:auto; margin: 8px 0;
+  }
+  .bubble.ai pre code { background:none; padding:0; }
+  .bubble.ai ul, .bubble.ai ol { margin: 6px 0 6px 20px; }
+  .bubble.ai li { margin: 3px 0; }
+  .bubble.ai p { margin: 6px 0; }
+  .bubble.ai p:first-child { margin-top:0; } .bubble.ai p:last-child { margin-bottom:0; }
+  .hello { align-self:center; color:var(--muted); font-size: 13px; text-align:center; padding: 8px 16px; }
+
+  /* digitando */
+  .typing { display:flex; gap:5px; padding: 6px 2px; }
+  .typing i {
+    width:8px; height:8px; border-radius:50%;
+    background: linear-gradient(90deg,var(--g2),var(--g4));
+    animation: bounce 1.2s infinite;
+  }
+  .typing i:nth-child(2){ animation-delay:.15s } .typing i:nth-child(3){ animation-delay:.3s }
+  @keyframes bounce { 30% { transform: translateY(-7px); opacity:.5; } }
+
+  .composer { padding: 14px 16px 18px; border-top: 1px solid rgba(255,255,255,.08); }
+  .composer-inner {
+    display:flex; gap: 10px; align-items:flex-end;
+    background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    border-radius: 18px; padding: 8px 8px 8px 18px;
+    transition: border .3s, box-shadow .3s;
+  }
+  .composer-inner:focus-within { border-color: var(--g2); box-shadow: 0 0 0 4px rgba(139,92,246,.15); }
+  .composer textarea {
+    flex:1; background:none; border:none; outline:none; resize:none;
+    color: var(--text); font: inherit; font-size: 14.5px; line-height: 1.5;
+    max-height: 120px; padding: 8px 0;
+  }
+  .composer textarea::placeholder { color:#5c6478; }
+  .send {
+    width: 44px; height: 44px; border:none; border-radius: 13px; cursor:pointer; flex-shrink:0;
+    background: linear-gradient(135deg,var(--g1),var(--g2),var(--g3));
+    background-size: 200% auto;
+    color:#fff; font-size: 18px; display:flex; align-items:center; justify-content:center;
+    transition: background-position .4s, transform .15s;
+    box-shadow: 0 6px 18px rgba(139,92,246,.4);
+  }
+  .send:hover { background-position: right center; transform: translateY(-2px); }
+  .send:active { transform: scale(.92); }
+  .send:disabled { opacity:.5; cursor:wait; transform:none; }
+
+  .chat-err { color:#fda4af; font-size: 12.5px; text-align:center; min-height: 16px; padding-top: 6px; }
+  .hidden { display:none !important; }
+
+  @media (max-width: 560px) {
+    .card { max-width: 100%; border-radius: 20px; }
+    .chat { height: 88vh; }
+    .hero { padding: 32px 24px 8px; }
+    .form { padding: 18px 24px 30px; }
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <div class="header">
-      <div>
-        <h1>🤖 Meu Chatbot</h1>
-        <small>powered by MiniMax M3 + Supabase</small>
-      </div>
-      <button id="logoutBtn" class="ghost hidden">Sair</button>
-    </div>
-    <div class="body">
 
-      <!-- LOGIN -->
-      <div id="authView">
+<div class="aurora"><span></span><span></span><span></span><span></span></div>
+<div class="noise"></div>
+
+<div class="stage">
+  <div class="card">
+
+    <!-- ====== LOGIN ====== -->
+    <div id="authView">
+      <div class="hero">
+        <canvas id="orb" width="300" height="300"></canvas>
+        <div class="brand">Nexa</div>
+        <div class="tagline">Sua inteligência artificial pessoal ✨</div>
+      </div>
+      <div class="form">
         <div class="tabs">
           <button id="tabLogin" class="active">Entrar</button>
           <button id="tabSignup">Criar conta</button>
         </div>
-        <div class="error" id="authError"></div>
-        <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" />
-        <input id="password" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password" />
-        <button id="authBtn">Entrar</button>
+        <div class="field"><input id="email" type="email" placeholder="seu@email.com" autocomplete="email" /></div>
+        <div class="field"><input id="password" type="password" placeholder="Sua senha" autocomplete="current-password" /></div>
+        <button class="cta" id="authBtn">Entrar →</button>
+        <div class="feedback" id="authMsg"></div>
       </div>
-
-      <!-- CHAT -->
-      <div id="chatView" class="hidden">
-        <div class="msg-area" id="messages">
-          <div class="msg sys">Olá! Faça uma pergunta que eu respondo. 👋</div>
-        </div>
-        <div class="error" id="chatError"></div>
-        <div class="row">
-          <textarea id="prompt" placeholder="Digite sua pergunta..."></textarea>
-          <button id="sendBtn">Enviar</button>
-        </div>
-      </div>
-
     </div>
+
+    <!-- ====== CHAT ====== -->
+    <div id="chatView" class="chat hidden">
+      <div class="chat-head">
+        <div class="avatar"></div>
+        <div class="who">
+          <b>Nexa</b>
+          <small><span class="dot"></span> online · MiniMax M3</small>
+        </div>
+        <button class="leave" id="logoutBtn">Sair</button>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="hello">🔮 Conversas protegidas · pergunte o que quiser</div>
+      </div>
+      <div class="composer">
+        <div class="composer-inner">
+          <textarea id="prompt" rows="1" placeholder="Pergunte alguma coisa..."></textarea>
+          <button class="send" id="sendBtn">➤</button>
+        </div>
+        <div class="chat-err" id="chatErr"></div>
+      </div>
+    </div>
+
   </div>
+</div>
 
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // ===== CONFIG (já preenchido com seu projeto) =====
-    const SUPABASE_URL = "https://gdryogwjzaaacpwkrihv.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_hdBFKb6YtmGdO8_MHiFxoQ_fYN7CavM";
-    // ==================================================
+  // ===== CONFIG =====
+  const SUPABASE_URL = "https://gdryogwjzaaacpwkrihv.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_hdBFKb6YtmGdO8_MHiFxoQ_fYN7CavM";
+  // ==================
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = (id) => document.getElementById(id);
+  let mode = "login";
+  const history = [];
 
-    const $ = (id) => document.getElementById(id);
-    let mode = "login";
-    const history = [];
-
-    // --- alternar abas login/cadastro ---
-    $("tabLogin").onclick = () => setMode("login");
-    $("tabSignup").onclick = () => setMode("signup");
-    function setMode(m) {
-      mode = m;
-      $("tabLogin").classList.toggle("active", m === "login");
-      $("tabSignup").classList.toggle("active", m === "signup");
-      $("authBtn").textContent = m === "login" ? "Entrar" : "Criar conta";
-      $("authError").textContent = "";
+  /* ---------- ORBE 3D (canvas: esfera de partículas girando) ---------- */
+  (() => {
+    const cv = $("orb"), ctx = cv.getContext("2d");
+    const N = 380, R = 105, pts = [];
+    const colors = ["#ff5ec4","#8b5cf6","#3b82f6","#06d6f6","#34d399"];
+    for (let i = 0; i < N; i++) {
+      const t = Math.acos(1 - 2 * (i + .5) / N), p = Math.PI * (1 + Math.sqrt(5)) * i;
+      pts.push({
+        x: Math.sin(t)*Math.cos(p), y: Math.sin(t)*Math.sin(p), z: Math.cos(t),
+        c: colors[i % colors.length]
+      });
     }
+    let a = 0, b = 0;
+    (function draw() {
+      ctx.clearRect(0,0,300,300);
+      a += 0.006; b += 0.0035;
+      const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
+      const order = [];
+      for (const pt of pts) {
+        let x = pt.x*ca - pt.z*sa, z1 = pt.x*sa + pt.z*ca;
+        let y = pt.y*cb - z1*sb,  z = pt.y*sb + z1*cb;
+        order.push({ x, y, z, c: pt.c });
+      }
+      order.sort((p,q)=>p.z-q.z);
+      for (const o of order) {
+        const s = 1.6 + (o.z + 1) * 1.3;
+        const al = .25 + (o.z + 1) * .37;
+        ctx.globalAlpha = al;
+        ctx.fillStyle = o.c;
+        ctx.shadowColor = o.c; ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(150 + o.x*R, 150 + o.y*R, s, 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      requestAnimationFrame(draw);
+    })();
+  })();
 
-    // --- autenticar ---
-    $("authBtn").onclick = async () => {
-      const email = $("email").value.trim();
-      const password = $("password").value;
-      $("authError").textContent = "";
-      if (!email || !password) { $("authError").textContent = "Preencha email e senha."; return; }
+  /* ---------- markdown leve (negrito, código, listas) ---------- */
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function md(text) {
+    let t = esc(text);
+    t = t.replace(/```([\s\S]*?)```/g, (_,c)=>`<pre><code>${c.trim()}</code></pre>`);
+    t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/^### (.*)$/gm, "<strong>$1</strong>");
+    t = t.replace(/^## (.*)$/gm, "<strong>$1</strong>");
+    t = t.replace(/^# (.*)$/gm, "<strong>$1</strong>");
+    // listas
+    t = t.replace(/((?:^[-*•] .*\n?)+)/gm, m =>
+      "<ul>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^[-*•] /,"")}</li>`).join("") + "</ul>");
+    t = t.replace(/((?:^\d+[.)] .*\n?)+)/gm, m =>
+      "<ol>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^\d+[.)] /,"")}</li>`).join("") + "</ol>");
+    // parágrafos
+    return t.split(/\n{2,}/).map(p => /^<(ul|ol|pre)/.test(p.trim()) ? p : `<p>${p.replace(/\n/g,"<br>")}</p>`).join("");
+  }
 
-      $("authBtn").disabled = true;
-      try {
-        let res;
-        if (mode === "login") {
-          res = await supabase.auth.signInWithPassword({ email, password });
+  /* ---------- abas ---------- */
+  $("tabLogin").onclick = () => setMode("login");
+  $("tabSignup").onclick = () => setMode("signup");
+  function setMode(m) {
+    mode = m;
+    $("tabLogin").classList.toggle("active", m==="login");
+    $("tabSignup").classList.toggle("active", m==="signup");
+    $("authBtn").textContent = m==="login" ? "Entrar →" : "Criar minha conta ✦";
+    feedback("");
+  }
+  function feedback(msg, ok=false) {
+    const el = $("authMsg");
+    el.textContent = msg;
+    el.className = "feedback " + (msg ? (ok ? "ok" : "err") : "");
+  }
+
+  /* ---------- auth ---------- */
+  $("authBtn").onclick = async () => {
+    const email = $("email").value.trim(), password = $("password").value;
+    if (!email || !password) return feedback("Preencha email e senha.");
+    $("authBtn").disabled = true;
+    try {
+      const res = mode === "login"
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({ email, password });
+      if (res.error) {
+        const m = res.error.message;
+        feedback(
+          /invalid login/i.test(m) ? "Email ou senha incorretos." :
+          /rate limit/i.test(m) ? "Limite de emails atingido — tente novamente em 1 hora." :
+          /at least 6/i.test(m) ? "A senha precisa ter pelo menos 6 caracteres." :
+          /already registered/i.test(m) ? "Este email já tem conta — use a aba Entrar." : m
+        );
+      } else if (mode === "signup" && !res.data.session) {
+        feedback("Conta criada! 🎉 Confirme pelo link enviado ao seu email e depois entre.", true);
+      }
+    } finally { $("authBtn").disabled = false; }
+  };
+  $("password").addEventListener("keydown", e => { if (e.key === "Enter") $("authBtn").click(); });
+  $("logoutBtn").onclick = () => supabase.auth.signOut();
+
+  supabase.auth.onAuthStateChange((_e, session) => {
+    const on = !!session;
+    $("authView").classList.toggle("hidden", on);
+    $("chatView").classList.toggle("hidden", !on);
+  });
+  supabase.auth.getSession();
+
+  /* ---------- chat ---------- */
+  const msgs = $("msgs");
+  function bubble(cls, html) {
+    const d = document.createElement("div");
+    d.className = "bubble " + cls;
+    d.innerHTML = html;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    return d;
+  }
+
+  // efeito máquina de escrever sobre HTML já formatado
+  function typewrite(el, html) {
+    el.innerHTML = "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    const queue = [];
+    (function walk(src, dst) {
+      for (const node of src.childNodes) {
+        if (node.nodeType === 3) {
+          const tn = document.createTextNode("");
+          dst.appendChild(tn);
+          queue.push({ tn, text: node.textContent });
         } else {
-          res = await supabase.auth.signUp({ email, password });
+          const cl = node.cloneNode(false);
+          dst.appendChild(cl);
+          walk(node, cl);
         }
-        if (res.error) { $("authError").textContent = res.error.message; }
-        else if (mode === "signup" && !res.data.session) {
-          $("authError").textContent = "Conta criada! Verifique seu email para confirmar e depois entre.";
-        }
-      } finally {
-        $("authBtn").disabled = false;
       }
-    };
-
-    $("logoutBtn").onclick = () => supabase.auth.signOut();
-
-    // --- controla qual tela aparece ---
-    supabase.auth.onAuthStateChange((_e, session) => {
-      const logged = !!session;
-      $("authView").classList.toggle("hidden", logged);
-      $("chatView").classList.toggle("hidden", !logged);
-      $("logoutBtn").classList.toggle("hidden", !logged);
-    });
-    supabase.auth.getSession();
-
-    // --- chat ---
-    function addMsg(text, cls) {
-      const div = document.createElement("div");
-      div.className = "msg " + cls;
-      div.textContent = text;
-      $("messages").appendChild(div);
-      $("messages").scrollTop = $("messages").scrollHeight;
-      return div;
-    }
-
-    async function send() {
-      const text = $("prompt").value.trim();
-      if (!text) return;
-      $("chatError").textContent = "";
-      $("prompt").value = "";
-      addMsg(text, "user");
-      history.push({ role: "user", content: text });
-
-      const thinking = addMsg("digitando...", "bot");
-      $("sendBtn").disabled = true;
-      try {
-        const { data, error } = await supabase.functions.invoke("chat", {
-          body: { messages: history },
-        });
-        if (error) throw error;
-        if (data.error) throw new Error(JSON.stringify(data.detail || data.error));
-        thinking.textContent = data.reply;
-        history.push({ role: "assistant", content: data.reply });
-      } catch (e) {
-        thinking.remove();
-        $("chatError").textContent = "Erro: " + (e.message || e);
-      } finally {
-        $("sendBtn").disabled = false;
+    })(tmp, el);
+    let qi = 0, ci = 0;
+    (function tick() {
+      let budget = 3; // chars por frame
+      while (budget-- > 0 && qi < queue.length) {
+        const item = queue[qi];
+        item.tn.textContent += item.text[ci++] ?? "";
+        if (ci >= item.text.length) { qi++; ci = 0; }
       }
-    }
+      msgs.scrollTop = msgs.scrollHeight;
+      if (qi < queue.length) requestAnimationFrame(tick);
+    })();
+  }
 
-    $("sendBtn").onclick = send;
-    $("prompt").addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-    });
-  </script>
+  const ta = $("prompt");
+  ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; });
+  ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+  $("sendBtn").onclick = send;
+
+  async function send() {
+    const text = ta.value.trim();
+    if (!text || $("sendBtn").disabled) return;
+    $("chatErr").textContent = "";
+    ta.value = ""; ta.style.height = "auto";
+    bubble("me", esc(text));
+    history.push({ role: "user", content: text });
+
+    const wait = bubble("ai", '<div class="typing"><i></i><i></i><i></i></div>');
+    $("sendBtn").disabled = true;
+    try {
+      const { data, error } = await supabase.functions.invoke("chat", { body: { messages: history } });
+      if (error) throw error;
+      if (data.error) throw new Error(typeof data.error === "string" ? data.error : "Erro no servidor de IA");
+      typewrite(wait, md(data.reply));
+      history.push({ role: "assistant", content: data.reply });
+    } catch (e) {
+      wait.remove();
+      $("chatErr").textContent = "⚠ " + (e.message || "Falha na conexão. Tente de novo.");
+    } finally {
+      $("sendBtn").disabled = false;
+      ta.focus();
+    }
+  }
+</script>
 </body>
 </html>
