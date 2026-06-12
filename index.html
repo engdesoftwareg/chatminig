@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nexa · IA Imersiva</title>
+<title>G · IA Imersiva</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -146,22 +146,15 @@
   .feedback.err { color: #fda4af; } .feedback.ok { color: #6ee7b7; }
 
   /* ===== CHAT ===== */
-  .chat { display:flex; flex-direction:column; height: min(88vh, 820px); }
+  .chat { display:flex; flex-direction:column; height: min(88vh, 820px); position: relative; }
   .chat-head {
     display:flex; align-items:center; gap:12px;
     padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.08);
     background: rgba(255,255,255,.03);
   }
-  .avatar {
-    width: 44px; height: 44px; border-radius: 50%; flex-shrink:0;
-    background: conic-gradient(from 0deg, var(--g1),var(--g2),var(--g3),var(--g4),var(--g5),var(--g1));
-    animation: spin 5s linear infinite; position: relative;
-    box-shadow: 0 0 22px rgba(139,92,246,.6);
-  }
-  .avatar::after {
-    content:"✦"; position:absolute; inset:3px; border-radius:50%;
-    background: #0b0b18; display:flex; align-items:center; justify-content:center;
-    font-size: 18px; color:#fff; animation: spin 5s linear infinite reverse;
+  #orbMini {
+    width: 46px; height: 46px; flex-shrink:0;
+    filter: drop-shadow(0 0 14px rgba(139,92,246,.6));
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .chat-head .who { flex:1; }
@@ -259,6 +252,37 @@
   .chat-err { color:#fda4af; font-size: 12.5px; text-align:center; min-height: 16px; padding-top: 6px; }
   .hidden { display:none !important; }
 
+  /* botão de áudio nas respostas */
+  .speak {
+    display:inline-flex; align-items:center; gap:6px;
+    margin-top: 10px; padding: 5px 12px; cursor: pointer;
+    font: inherit; font-size: 12px; color: #c4b5fd;
+    background: rgba(139,92,246,.12); border: 1px solid rgba(139,92,246,.35);
+    border-radius: 99px; transition: all .25s;
+  }
+  .speak:hover { background: rgba(139,92,246,.25); color:#fff; box-shadow: 0 0 14px rgba(139,92,246,.35); }
+  .speak.playing {
+    color:#a5f3fc; border-color: rgba(6,214,246,.5); background: rgba(6,214,246,.12);
+    box-shadow: 0 0 16px rgba(6,214,246,.3);
+  }
+  .speak.playing .bars { display:inline-flex; }
+  .bars { display:none; gap:2px; align-items:flex-end; height: 11px; }
+  .bars i { width:2.5px; background:#a5f3fc; border-radius:2px; animation: eq .8s ease-in-out infinite; }
+  .bars i:nth-child(1){ height:5px; } .bars i:nth-child(2){ height:10px; animation-delay:.2s; } .bars i:nth-child(3){ height:7px; animation-delay:.4s; }
+  @keyframes eq { 50% { transform: scaleY(.4); } }
+
+  /* botão "descer pro fim" */
+  .jump {
+    position: absolute; right: 18px; bottom: 96px; z-index: 10;
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18);
+    background: rgba(20,20,40,.8); backdrop-filter: blur(10px);
+    color:#c4b5fd; font-size: 16px; cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    animation: pop .3s; transition: all .25s;
+  }
+  .jump:hover { color:#fff; border-color: var(--g2); box-shadow: 0 0 18px rgba(139,92,246,.4); }
+
   @media (max-width: 560px) {
     .card { max-width: 100%; border-radius: 24px; }
     .chat { height: 90vh; }
@@ -287,7 +311,7 @@
     <div id="authView">
       <div class="hero">
         <canvas id="orb" width="360" height="360"></canvas>
-        <div class="brand">Nexa</div>
+        <div class="brand">G</div>
         <div class="tagline">Sua inteligência artificial com acesso à internet</div>
         <div class="badges">
           <span class="badge">⚡ MiniMax M3</span>
@@ -310,9 +334,9 @@
     <!-- ====== CHAT ====== -->
     <div id="chatView" class="chat hidden">
       <div class="chat-head">
-        <div class="avatar"></div>
+        <canvas id="orbMini" width="100" height="100"></canvas>
         <div class="who">
-          <b>Nexa</b>
+          <b>G</b>
           <small><span class="dot"></span> online · M3 + busca web</small>
         </div>
         <button class="leave" id="logoutBtn">Sair</button>
@@ -555,10 +579,11 @@
     });
   })();
 
-  /* ========== ORBE 3D do login ========== */
-  (() => {
-    const cv = $("orb"), ctx = cv.getContext("2d");
-    const N = 460, R = 126, pts = [];
+  /* ========== ORBE 3D (login grande + mini no chat) ========== */
+  function makeOrb(canvasId, N, R, sizeMul, visibleWhen) {
+    const cv = $(canvasId), ctx = cv.getContext("2d");
+    const SIZE = cv.width, C = SIZE/2;
+    const pts = [];
     const colors = ["#ff5ec4","#8b5cf6","#3b82f6","#06d6f6","#34d399"];
     for (let i = 0; i < N; i++) {
       const t = Math.acos(1 - 2*(i+.5)/N), p = Math.PI*(1+Math.sqrt(5))*i;
@@ -567,8 +592,8 @@
     let a = 0, b = 0;
     (function draw() {
       requestAnimationFrame(draw);
-      if ($("authView").classList.contains("hidden")) return;
-      ctx.clearRect(0,0,360,360);
+      if (!visibleWhen()) return;
+      ctx.clearRect(0,0,SIZE,SIZE);
       a += .007 + mouse.x*.004; b += .004 + mouse.y*.003;
       const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
       const order = [];
@@ -579,14 +604,16 @@
       }
       order.sort((p,q)=>p.z-q.z);
       for (const o of order) {
-        const s = 1.7 + (o.z+1)*1.5;
+        const s = (1.7 + (o.z+1)*1.5) * sizeMul;
         ctx.globalAlpha = .2 + (o.z+1)*.4;
-        ctx.fillStyle = o.c; ctx.shadowColor = o.c; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.arc(180+o.x*R, 180+o.y*R, s, 0, 7); ctx.fill();
+        ctx.fillStyle = o.c; ctx.shadowColor = o.c; ctx.shadowBlur = 10*sizeMul;
+        ctx.beginPath(); ctx.arc(C+o.x*R, C+o.y*R, s, 0, 7); ctx.fill();
       }
       ctx.globalAlpha = 1; ctx.shadowBlur = 0;
     })();
-  })();
+  }
+  makeOrb("orb", 460, 126, 1, () => !$("authView").classList.contains("hidden"));
+  makeOrb("orbMini", 220, 38, .55, () => !$("chatView").classList.contains("hidden"));
 
   /* ========== markdown leve ========== */
   function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -642,7 +669,7 @@
     } finally { $("authBtn").disabled = false; }
   };
   $("password").addEventListener("keydown", e => { if (e.key === "Enter") $("authBtn").click(); });
-  $("logoutBtn").onclick = () => supabase.auth.signOut();
+  $("logoutBtn").onclick = () => { speechSynthesis.cancel(); supabase.auth.signOut(); };
 
   supabase.auth.onAuthStateChange((_e, session) => {
     const on = !!session;
@@ -669,7 +696,65 @@
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  function typewrite(el, html) {
+  /* ---- rolagem inteligente: só acompanha se o usuário estiver perto do fim ---- */
+  function nearBottom() { return msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 90; }
+  let jumpBtn = null;
+  function showJump() {
+    if (jumpBtn) return;
+    jumpBtn = document.createElement("button");
+    jumpBtn.className = "jump";
+    jumpBtn.textContent = "↓";
+    jumpBtn.title = "Ir para o fim";
+    jumpBtn.onclick = () => { msgs.scrollTo({ top: msgs.scrollHeight, behavior: "smooth" }); hideJump(); };
+    $("chatView").appendChild(jumpBtn);
+  }
+  function hideJump() { jumpBtn?.remove(); jumpBtn = null; }
+  msgs.addEventListener("scroll", () => { if (nearBottom()) hideJump(); });
+
+  /* ---- leitura em voz alta (Web Speech API, pt-BR) ---- */
+  let currentUtter = null, currentBtn = null;
+  function ptVoice() {
+    const vs = speechSynthesis.getVoices();
+    return vs.find(v => v.lang === "pt-BR") || vs.find(v => v.lang?.startsWith("pt")) || null;
+  }
+  speechSynthesis.onvoiceschanged = () => {};
+  function stopSpeech() {
+    speechSynthesis.cancel();
+    currentBtn?.classList.remove("playing");
+    if (currentBtn) currentBtn.querySelector(".lbl").textContent = "Ouvir";
+    currentUtter = null; currentBtn = null;
+  }
+  function addSpeakButton(bubbleEl, plainText) {
+    const btn = document.createElement("button");
+    btn.className = "speak";
+    btn.innerHTML = `🔊 <span class="lbl">Ouvir</span> <span class="bars"><i></i><i></i><i></i></span>`;
+    btn.onclick = () => {
+      if (currentBtn === btn) { stopSpeech(); return; }   // já tocando este → para
+      stopSpeech();                                        // para qualquer outro
+      const u = new SpeechSynthesisUtterance(plainText);
+      u.lang = "pt-BR"; u.rate = 1.04; u.pitch = 1;
+      const v = ptVoice(); if (v) u.voice = v;
+      u.onend = stopSpeech; u.onerror = stopSpeech;
+      currentUtter = u; currentBtn = btn;
+      btn.classList.add("playing");
+      btn.querySelector(".lbl").textContent = "Parar";
+      speechSynthesis.speak(u);
+    };
+    bubbleEl.appendChild(btn);
+  }
+  // texto puro pra voz (remove markdown/links)
+  function toPlain(mdText) {
+    return mdText
+      .replace(/```[\s\S]*?```/g, " (trecho de código) ")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\(https?:[^)]+\)/g, "$1")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/^#{1,4} /gm, "")
+      .replace(/^[-*•] /gm, "")
+      .trim();
+  }
+
+  function typewrite(el, html, onDone) {
     el.innerHTML = "";
     const tmp = document.createElement("div");
     tmp.innerHTML = html;
@@ -687,6 +772,8 @@
         }
       }
     })(tmp, el);
+    // mostra o INÍCIO da resposta e deixa a pessoa ler no ritmo dela
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
     let qi = 0, ci = 0;
     (function tick() {
       let budget = 4;
@@ -695,8 +782,10 @@
         item.tn.textContent += item.text[ci++] ?? "";
         if (ci >= item.text.length) { qi++; ci = 0; }
       }
-      msgs.scrollTop = msgs.scrollHeight;
+      if (nearBottom()) msgs.scrollTop = msgs.scrollHeight; // só rola se já estiver no fim
+      else showJump();
       if (qi < queue.length) requestAnimationFrame(tick);
+      else { hideJump(); onDone?.(); }
     })();
   }
 
@@ -729,13 +818,14 @@
       if (error) throw error;
       if (data.error) throw new Error(typeof data.error === "string" ? data.error : "Erro no servidor de IA");
       clearInterval(cycler);
+      const plain = toPlain(data.reply);
       if (data.searches?.length) {
         wait.remove();
         for (const q of data.searches) chip(q);
         const ans = bubble("ai", "");
-        typewrite(ans, md(data.reply));
+        typewrite(ans, md(data.reply), () => addSpeakButton(ans, plain));
       } else {
-        typewrite(wait, md(data.reply));
+        typewrite(wait, md(data.reply), () => addSpeakButton(wait, plain));
       }
       history.push({ role: "assistant", content: data.reply });
     } catch (e) {
