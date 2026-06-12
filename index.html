@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nexa · IA Inteligente</title>
+<title>Nexa · IA com Busca Web</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #050510;
-    --glass: rgba(255,255,255,.06);
+    --bg: #030308;
+    --glass: rgba(255,255,255,.055);
     --glass-border: rgba(255,255,255,.12);
     --text: #f1f5f9;
     --muted: #8b93a7;
@@ -24,70 +24,83 @@
     overflow: hidden;
   }
 
-  /* ===== AURORA DE FUNDO ===== */
-  .aurora { position: fixed; inset: 0; z-index: 0; filter: blur(90px); opacity:.55; }
-  .aurora span {
-    position: absolute; border-radius: 50%;
-    mix-blend-mode: screen;
-    animation: float 18s ease-in-out infinite;
-  }
-  .aurora span:nth-child(1){ width:55vw; height:55vw; background:#ff5ec4; top:-20%; left:-12%; animation-delay:0s; }
-  .aurora span:nth-child(2){ width:48vw; height:48vw; background:#8b5cf6; top:30%; left:55%; animation-delay:-4s; }
-  .aurora span:nth-child(3){ width:42vw; height:42vw; background:#3b82f6; top:55%; left:-8%; animation-delay:-9s; }
-  .aurora span:nth-child(4){ width:38vw; height:38vw; background:#06d6f6; top:-10%; left:60%; animation-delay:-13s; }
+  /* ===== AURORA ===== */
+  .aurora { position: fixed; inset: -10%; z-index: 0; filter: blur(100px); opacity:.5;
+    transition: transform .6s cubic-bezier(.2,.8,.3,1); will-change: transform; }
+  .aurora span { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: float 20s ease-in-out infinite; }
+  .aurora span:nth-child(1){ width:55vw; height:55vw; background:#ff5ec4; top:-18%; left:-12%; }
+  .aurora span:nth-child(2){ width:48vw; height:48vw; background:#8b5cf6; top:32%; left:56%; animation-delay:-5s; }
+  .aurora span:nth-child(3){ width:44vw; height:44vw; background:#2563eb; top:58%; left:-10%; animation-delay:-10s; }
+  .aurora span:nth-child(4){ width:38vw; height:38vw; background:#06d6f6; top:-12%; left:62%; animation-delay:-14s; }
+  .aurora span:nth-child(5){ width:30vw; height:30vw; background:#34d399; top:38%; left:18%; animation-delay:-7s; opacity:.7; }
   @keyframes float {
     0%,100% { transform: translate(0,0) scale(1); }
-    33% { transform: translate(6vw,-5vh) scale(1.15); }
-    66% { transform: translate(-5vw,6vh) scale(.92); }
+    33% { transform: translate(6vw,-6vh) scale(1.18); }
+    66% { transform: translate(-6vw,6vh) scale(.9); }
   }
 
-  /* grão sutil */
-  .noise{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.04;
+  /* ===== ESTRELAS (canvas) ===== */
+  #space { position: fixed; inset: 0; z-index: 1; }
+
+  .noise{ position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.035;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-  .stage { position: relative; z-index: 2; height: 100%; display:flex; align-items:center; justify-content:center; padding: 18px; }
+  .stage { position: relative; z-index: 3; height: 100%; display:flex; align-items:center; justify-content:center; padding: 18px; perspective: 1400px; }
 
-  /* ===== CARTÃO DE VIDRO ===== */
+  /* ===== CARTÃO ===== */
   .card {
-    width: 100%; max-width: 520px;
+    width: 100%; max-width: 540px;
     background: var(--glass);
     border: 1px solid var(--glass-border);
-    border-radius: 26px;
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+    border-radius: 28px;
+    backdrop-filter: blur(30px) saturate(170%);
+    -webkit-backdrop-filter: blur(30px) saturate(170%);
+    box-shadow: 0 40px 100px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.09);
     overflow: hidden;
-    animation: rise .8s cubic-bezier(.2,.9,.25,1.2);
+    animation: rise .9s cubic-bezier(.2,.9,.25,1.15);
+    transform-style: preserve-3d;
+    transition: transform .25s ease-out;
+    position: relative;
   }
-  @keyframes rise { from { opacity:0; transform: translateY(40px) scale(.96);} to { opacity:1; transform:none;} }
+  /* borda iridescente animada */
+  .card::before {
+    content:""; position:absolute; inset:0; border-radius:28px; padding:1.5px;
+    background: linear-gradient(120deg, var(--g1), var(--g2), var(--g3), var(--g4), var(--g5), var(--g1));
+    background-size: 300% auto;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: shine 8s linear infinite;
+    opacity:.5; pointer-events:none;
+  }
+  @keyframes rise { from { opacity:0; transform: translateY(50px) scale(.94);} to { opacity:1; transform:none;} }
+  @keyframes shine { to { background-position: 300% center; } }
 
-  /* ===== TELA DE LOGIN ===== */
-  .hero { padding: 44px 40px 14px; text-align:center; }
-  #orb { width: 150px; height: 150px; margin: 0 auto 6px; display:block; }
+  /* ===== LOGIN ===== */
+  .hero { padding: 42px 40px 10px; text-align:center; }
+  #orb { width: 160px; height: 160px; margin: 0 auto 4px; display:block; filter: drop-shadow(0 0 30px rgba(139,92,246,.45)); }
   .brand {
-    font-size: 34px; font-weight: 800; letter-spacing: -1px;
+    font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
     background: linear-gradient(90deg,var(--g1),var(--g2),var(--g3),var(--g4),var(--g5),var(--g1));
     background-size: 300% auto;
     -webkit-background-clip: text; background-clip: text; color: transparent;
     animation: shine 6s linear infinite;
   }
-  @keyframes shine { to { background-position: 300% center; } }
   .tagline { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .badges { display:flex; gap:8px; justify-content:center; margin-top: 14px; flex-wrap:wrap; }
+  .badge {
+    font-size: 11.5px; color:#c7d2fe; padding: 5px 12px; border-radius: 99px;
+    background: rgba(139,92,246,.12); border:1px solid rgba(139,92,246,.3);
+  }
 
   .form { padding: 22px 40px 40px; }
   .tabs { display:flex; background: rgba(255,255,255,.05); border-radius: 14px; padding:5px; margin-bottom: 20px; }
   .tabs button {
     flex:1; padding: 10px; border:none; border-radius: 10px; cursor:pointer;
-    background: transparent; color: var(--muted); font: inherit; font-weight:600; font-size:14px;
-    transition: all .3s;
+    background: transparent; color: var(--muted); font: inherit; font-weight:600; font-size:14px; transition: all .3s;
   }
-  .tabs button.active {
-    color:#fff;
-    background: linear-gradient(90deg, var(--g2), var(--g3));
-    box-shadow: 0 6px 18px rgba(99,102,241,.4);
-  }
+  .tabs button.active { color:#fff; background: linear-gradient(90deg, var(--g2), var(--g3)); box-shadow: 0 6px 18px rgba(99,102,241,.4); }
 
-  .field { position: relative; margin-bottom: 14px; }
+  .field { margin-bottom: 14px; }
   .field input {
     width:100%; padding: 15px 16px; font: inherit; font-size:15px;
     background: rgba(255,255,255,.05); color: var(--text);
@@ -104,35 +117,38 @@
     background-size: 250% auto;
     transition: background-position .5s, transform .15s, box-shadow .3s;
     box-shadow: 0 10px 30px rgba(139,92,246,.45);
+    position: relative; overflow: hidden;
   }
+  .cta::after { content:""; position:absolute; top:0; left:-80%; width:50%; height:100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    transform: skewX(-20deg); animation: sweep 3.5s ease-in-out infinite; }
+  @keyframes sweep { 0%,55%{ left:-80%; } 100%{ left:180%; } }
   .cta:hover { background-position: right center; transform: translateY(-2px); }
   .cta:active { transform: scale(.98); }
   .cta:disabled { opacity:.6; cursor: wait; }
 
   .feedback { min-height: 20px; font-size: 13px; text-align:center; margin-top: 12px; }
-  .feedback.err { color: #fda4af; }
-  .feedback.ok { color: #6ee7b7; }
+  .feedback.err { color: #fda4af; } .feedback.ok { color: #6ee7b7; }
 
   /* ===== CHAT ===== */
-  .chat { display:flex; flex-direction:column; height: min(86vh, 760px); }
+  .chat { display:flex; flex-direction:column; height: min(88vh, 800px); }
   .chat-head {
     display:flex; align-items:center; gap:12px;
     padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.08);
     background: rgba(255,255,255,.03);
   }
   .avatar {
-    width: 40px; height: 40px; border-radius: 50%; flex-shrink:0;
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink:0;
     background: conic-gradient(from 0deg, var(--g1),var(--g2),var(--g3),var(--g4),var(--g5),var(--g1));
-    animation: spin 5s linear infinite;
-    position: relative;
+    animation: spin 5s linear infinite; position: relative;
+    box-shadow: 0 0 18px rgba(139,92,246,.5);
   }
   .avatar::after {
     content:"✦"; position:absolute; inset:3px; border-radius:50%;
     background: #0b0b18; display:flex; align-items:center; justify-content:center;
-    font-size: 16px; color:#fff;
+    font-size: 17px; color:#fff; animation: spin 5s linear infinite reverse;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .avatar::after { animation: spin 5s linear infinite reverse; }
   .chat-head .who { flex:1; }
   .chat-head .who b { font-size: 16px; display:block; }
   .chat-head .who small { color:#34d399; font-size: 12px; display:flex; align-items:center; gap:5px; }
@@ -140,26 +156,25 @@
   @keyframes pulse { 50% { opacity:.4; } }
   .leave {
     background: rgba(255,255,255,.06); color: var(--muted); border:1px solid rgba(255,255,255,.1);
-    padding: 8px 14px; border-radius: 10px; cursor:pointer; font: inherit; font-size: 13px;
-    transition: all .25s;
+    padding: 8px 14px; border-radius: 10px; cursor:pointer; font: inherit; font-size: 13px; transition: all .25s;
   }
   .leave:hover { color:#fff; border-color: rgba(255,255,255,.3); }
 
-  .msgs { flex:1; overflow-y:auto; padding: 22px 20px; display:flex; flex-direction:column; gap: 16px; scroll-behavior:smooth; }
+  .msgs { flex:1; overflow-y:auto; padding: 22px 20px; display:flex; flex-direction:column; gap: 14px; scroll-behavior:smooth; }
   .msgs::-webkit-scrollbar { width: 5px; }
   .msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 99px; }
 
   .bubble {
-    max-width: 86%; padding: 13px 17px; border-radius: 18px;
-    line-height: 1.6; font-size: 14.5px; word-wrap: break-word;
-    animation: pop .35s cubic-bezier(.2,.9,.3,1.3);
+    max-width: 87%; padding: 13px 17px; border-radius: 18px;
+    line-height: 1.65; font-size: 14.5px; word-wrap: break-word;
+    animation: pop .4s cubic-bezier(.2,.9,.3,1.25);
   }
-  @keyframes pop { from { opacity:0; transform: translateY(14px) scale(.95);} to { opacity:1; transform:none;} }
+  @keyframes pop { from { opacity:0; transform: translateY(16px) scale(.94);} to { opacity:1; transform:none;} }
   .bubble.me {
     align-self: flex-end;
     background: linear-gradient(135deg, var(--g2), var(--g3));
     border-bottom-right-radius: 6px;
-    box-shadow: 0 8px 24px rgba(99,102,241,.35);
+    box-shadow: 0 8px 26px rgba(99,102,241,.4);
   }
   .bubble.ai {
     align-self: flex-start;
@@ -168,14 +183,12 @@
     border-bottom-left-radius: 6px;
   }
   .bubble.ai strong { color:#c4b5fd; }
+  .bubble.ai a { color:#7dd3fc; text-decoration: none; border-bottom: 1px dotted #7dd3fc; }
   .bubble.ai code {
     background: rgba(0,0,0,.4); padding: 2px 7px; border-radius: 6px;
     font-family: ui-monospace, "Cascadia Code", monospace; font-size: 13px; color:#7dd3fc;
   }
-  .bubble.ai pre {
-    background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08);
-    padding: 13px; border-radius: 12px; overflow-x:auto; margin: 8px 0;
-  }
+  .bubble.ai pre { background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08); padding: 13px; border-radius: 12px; overflow-x:auto; margin: 8px 0; }
   .bubble.ai pre code { background:none; padding:0; }
   .bubble.ai ul, .bubble.ai ol { margin: 6px 0 6px 20px; }
   .bubble.ai li { margin: 3px 0; }
@@ -183,15 +196,26 @@
   .bubble.ai p:first-child { margin-top:0; } .bubble.ai p:last-child { margin-bottom:0; }
   .hello { align-self:center; color:var(--muted); font-size: 13px; text-align:center; padding: 8px 16px; }
 
-  /* digitando */
-  .typing { display:flex; gap:5px; padding: 6px 2px; }
-  .typing i {
-    width:8px; height:8px; border-radius:50%;
-    background: linear-gradient(90deg,var(--g2),var(--g4));
-    animation: bounce 1.2s infinite;
+  /* chip de busca web */
+  .search-chip {
+    align-self: flex-start;
+    display:inline-flex; align-items:center; gap:7px;
+    font-size: 12px; color:#a5f3fc;
+    background: rgba(6,214,246,.08); border:1px solid rgba(6,214,246,.3);
+    padding: 6px 13px; border-radius: 99px;
+    animation: pop .4s cubic-bezier(.2,.9,.3,1.25);
+    box-shadow: 0 0 16px rgba(6,214,246,.15);
   }
+  .search-chip .globe { animation: spin 3s linear infinite; display:inline-block; }
+
+  /* status "pensando/pesquisando" */
+  .thinking { display:flex; align-items:center; gap:10px; }
+  .typing { display:flex; gap:5px; }
+  .typing i { width:8px; height:8px; border-radius:50%; background: linear-gradient(90deg,var(--g2),var(--g4)); animation: bounce 1.2s infinite; }
   .typing i:nth-child(2){ animation-delay:.15s } .typing i:nth-child(3){ animation-delay:.3s }
   @keyframes bounce { 30% { transform: translateY(-7px); opacity:.5; } }
+  .status-text { font-size: 12.5px; color: var(--muted); animation: fadeSwap .4s; }
+  @keyframes fadeSwap { from { opacity: 0; transform: translateY(4px);} to { opacity:1; transform:none;} }
 
   .composer { padding: 14px 16px 18px; border-top: 1px solid rgba(255,255,255,.08); }
   .composer-inner {
@@ -200,7 +224,7 @@
     border-radius: 18px; padding: 8px 8px 8px 18px;
     transition: border .3s, box-shadow .3s;
   }
-  .composer-inner:focus-within { border-color: var(--g2); box-shadow: 0 0 0 4px rgba(139,92,246,.15); }
+  .composer-inner:focus-within { border-color: var(--g2); box-shadow: 0 0 0 4px rgba(139,92,246,.15), 0 0 24px rgba(139,92,246,.18); }
   .composer textarea {
     flex:1; background:none; border:none; outline:none; resize:none;
     color: var(--text); font: inherit; font-size: 14.5px; line-height: 1.5;
@@ -215,35 +239,44 @@
     transition: background-position .4s, transform .15s;
     box-shadow: 0 6px 18px rgba(139,92,246,.4);
   }
-  .send:hover { background-position: right center; transform: translateY(-2px); }
-  .send:active { transform: scale(.92); }
+  .send:hover { background-position: right center; transform: translateY(-2px) rotate(-8deg); }
+  .send:active { transform: scale(.9); }
   .send:disabled { opacity:.5; cursor:wait; transform:none; }
 
   .chat-err { color:#fda4af; font-size: 12.5px; text-align:center; min-height: 16px; padding-top: 6px; }
   .hidden { display:none !important; }
 
   @media (max-width: 560px) {
-    .card { max-width: 100%; border-radius: 20px; }
-    .chat { height: 88vh; }
-    .hero { padding: 32px 24px 8px; }
+    .card { max-width: 100%; border-radius: 22px; }
+    .chat { height: 90vh; }
+    .hero { padding: 30px 24px 6px; }
     .form { padding: 18px 24px 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="aurora"><span></span><span></span><span></span><span></span></div>
+<div class="aurora" id="aurora"><span></span><span></span><span></span><span></span><span></span></div>
+<canvas id="space"></canvas>
 <div class="noise"></div>
 
 <div class="stage">
-  <div class="card">
+  <div class="card" id="card">
 
     <!-- ====== LOGIN ====== -->
     <div id="authView">
       <div class="hero">
-        <canvas id="orb" width="300" height="300"></canvas>
+        <canvas id="orb" width="320" height="320"></canvas>
         <div class="brand">Nexa</div>
-        <div class="tagline">Sua inteligência artificial pessoal ✨</div>
+        <div class="tagline">Sua inteligência artificial com acesso à internet</div>
+        <div class="badges">
+          <span class="badge">⚡ MiniMax M3</span>
+          <span class="badge">🌐 Busca Web em tempo real</span>
+          <span class="badge">🔒 Privado</span>
+        </div>
       </div>
       <div class="form">
         <div class="tabs">
@@ -263,12 +296,12 @@
         <div class="avatar"></div>
         <div class="who">
           <b>Nexa</b>
-          <small><span class="dot"></span> online · MiniMax M3</small>
+          <small><span class="dot"></span> online · M3 + busca web</small>
         </div>
         <button class="leave" id="logoutBtn">Sair</button>
       </div>
       <div class="msgs" id="msgs">
-        <div class="hello">🔮 Conversas protegidas · pergunte o que quiser</div>
+        <div class="hello">🔮 Pergunte qualquer coisa — eu pesquiso na internet quando preciso ✨</div>
       </div>
       <div class="composer">
         <div class="composer-inner">
@@ -295,21 +328,106 @@
   let mode = "login";
   const history = [];
 
-  /* ---------- ORBE 3D (canvas: esfera de partículas girando) ---------- */
+  /* ========== CAMPO DE ESTRELAS INTERATIVO + ESTRELAS CADENTES ========== */
+  (() => {
+    const cv = $("space"), ctx = cv.getContext("2d");
+    let W, H, stars = [], meteors = [];
+    const mouse = { x: -9999, y: -9999 };
+
+    function resize() {
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
+      const n = Math.min(180, Math.floor(W * H / 9000));
+      stars = Array.from({ length: n }, () => ({
+        x: Math.random()*W, y: Math.random()*H,
+        z: Math.random(),              // profundidade
+        r: .4 + Math.random()*1.6,
+        tw: Math.random()*Math.PI*2,   // fase do brilho
+        c: ["#ffffff","#c4b5fd","#7dd3fc","#fbcfe8"][Math.floor(Math.random()*4)],
+      }));
+    }
+    resize(); addEventListener("resize", resize);
+    addEventListener("pointermove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+    function spawnMeteor() {
+      meteors.push({
+        x: Math.random()*W*.8 + W*.2, y: -30,
+        vx: -(3+Math.random()*4), vy: 5+Math.random()*4,
+        life: 1,
+      });
+      setTimeout(spawnMeteor, 3000 + Math.random()*6000);
+    }
+    setTimeout(spawnMeteor, 2500);
+
+    let t = 0;
+    (function draw() {
+      ctx.clearRect(0,0,W,H);
+      t += .016;
+      for (const s of stars) {
+        // paralaxe: estrelas próximas fogem do mouse
+        const dx = s.x - mouse.x, dy = s.y - mouse.y;
+        const d2 = dx*dx + dy*dy;
+        let ox = 0, oy = 0;
+        if (d2 < 32400) { // raio 180px
+          const d = Math.sqrt(d2) || 1, f = (180 - d) / 180 * 22 * s.z;
+          ox = dx/d*f; oy = dy/d*f;
+        }
+        const tw = .45 + Math.sin(t*1.8 + s.tw) * .35;
+        ctx.globalAlpha = tw * (.35 + s.z*.65);
+        ctx.fillStyle = s.c;
+        ctx.beginPath();
+        ctx.arc(s.x + ox, s.y + oy, s.r * (0.7 + s.z*.6), 0, 7);
+        ctx.fill();
+      }
+      // meteoros
+      ctx.globalAlpha = 1;
+      meteors = meteors.filter(m => m.life > 0);
+      for (const m of meteors) {
+        m.x += m.vx; m.y += m.vy; m.life -= .008;
+        const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx*16, m.y - m.vy*16);
+        grad.addColorStop(0, `rgba(255,255,255,${m.life})`);
+        grad.addColorStop(.4, `rgba(139,92,246,${m.life*.7})`);
+        grad.addColorStop(1, "transparent");
+        ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(m.x - m.vx*16, m.y - m.vy*16);
+        ctx.stroke();
+      }
+      requestAnimationFrame(draw);
+    })();
+  })();
+
+  /* ========== AURORA + CARTÃO REAGEM AO MOUSE (tilt 3D) ========== */
+  (() => {
+    const card = $("card"), aurora = $("aurora");
+    let raf = null;
+    addEventListener("pointermove", e => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const nx = e.clientX / innerWidth - .5, ny = e.clientY / innerHeight - .5;
+        aurora.style.transform = `translate(${nx*-30}px, ${ny*-30}px)`;
+        if (matchMedia("(min-width: 700px)").matches) {
+          card.style.transform = `rotateY(${nx*4}deg) rotateX(${ny*-4}deg)`;
+        }
+      });
+    });
+    addEventListener("pointerleave", () => { card.style.transform = ""; });
+  })();
+
+  /* ========== ORBE 3D ========== */
   (() => {
     const cv = $("orb"), ctx = cv.getContext("2d");
-    const N = 380, R = 105, pts = [];
+    const N = 420, R = 112, pts = [];
     const colors = ["#ff5ec4","#8b5cf6","#3b82f6","#06d6f6","#34d399"];
     for (let i = 0; i < N; i++) {
       const t = Math.acos(1 - 2 * (i + .5) / N), p = Math.PI * (1 + Math.sqrt(5)) * i;
-      pts.push({
-        x: Math.sin(t)*Math.cos(p), y: Math.sin(t)*Math.sin(p), z: Math.cos(t),
-        c: colors[i % colors.length]
-      });
+      pts.push({ x: Math.sin(t)*Math.cos(p), y: Math.sin(t)*Math.sin(p), z: Math.cos(t), c: colors[i % colors.length] });
     }
     let a = 0, b = 0;
     (function draw() {
-      ctx.clearRect(0,0,300,300);
+      if (!cv.isConnected || $("authView").classList.contains("hidden")) { requestAnimationFrame(draw); return; }
+      ctx.clearRect(0,0,320,320);
       a += 0.006; b += 0.0035;
       const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
       const order = [];
@@ -320,13 +438,11 @@
       }
       order.sort((p,q)=>p.z-q.z);
       for (const o of order) {
-        const s = 1.6 + (o.z + 1) * 1.3;
-        const al = .25 + (o.z + 1) * .37;
-        ctx.globalAlpha = al;
-        ctx.fillStyle = o.c;
-        ctx.shadowColor = o.c; ctx.shadowBlur = 8;
+        const s = 1.6 + (o.z + 1) * 1.4;
+        ctx.globalAlpha = .22 + (o.z + 1) * .38;
+        ctx.fillStyle = o.c; ctx.shadowColor = o.c; ctx.shadowBlur = 9;
         ctx.beginPath();
-        ctx.arc(150 + o.x*R, 150 + o.y*R, s, 0, 7);
+        ctx.arc(160 + o.x*R, 160 + o.y*R, s, 0, 7);
         ctx.fill();
       }
       ctx.globalAlpha = 1; ctx.shadowBlur = 0;
@@ -334,26 +450,23 @@
     })();
   })();
 
-  /* ---------- markdown leve (negrito, código, listas) ---------- */
+  /* ========== markdown leve ========== */
   function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function md(text) {
     let t = esc(text);
-    t = t.replace(/```([\s\S]*?)```/g, (_,c)=>`<pre><code>${c.trim()}</code></pre>`);
+    t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c)=>`<pre><code>${c.trim()}</code></pre>`);
     t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    t = t.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
     t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    t = t.replace(/^### (.*)$/gm, "<strong>$1</strong>");
-    t = t.replace(/^## (.*)$/gm, "<strong>$1</strong>");
-    t = t.replace(/^# (.*)$/gm, "<strong>$1</strong>");
-    // listas
+    t = t.replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>");
     t = t.replace(/((?:^[-*•] .*\n?)+)/gm, m =>
       "<ul>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^[-*•] /,"")}</li>`).join("") + "</ul>");
     t = t.replace(/((?:^\d+[.)] .*\n?)+)/gm, m =>
       "<ol>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^\d+[.)] /,"")}</li>`).join("") + "</ol>");
-    // parágrafos
     return t.split(/\n{2,}/).map(p => /^<(ul|ol|pre)/.test(p.trim()) ? p : `<p>${p.replace(/\n/g,"<br>")}</p>`).join("");
   }
 
-  /* ---------- abas ---------- */
+  /* ========== abas/auth ========== */
   $("tabLogin").onclick = () => setMode("login");
   $("tabSignup").onclick = () => setMode("signup");
   function setMode(m) {
@@ -369,7 +482,6 @@
     el.className = "feedback " + (msg ? (ok ? "ok" : "err") : "");
   }
 
-  /* ---------- auth ---------- */
   $("authBtn").onclick = async () => {
     const email = $("email").value.trim(), password = $("password").value;
     if (!email || !password) return feedback("Preencha email e senha.");
@@ -401,7 +513,7 @@
   });
   supabase.auth.getSession();
 
-  /* ---------- chat ---------- */
+  /* ========== chat ========== */
   const msgs = $("msgs");
   function bubble(cls, html) {
     const d = document.createElement("div");
@@ -411,8 +523,15 @@
     msgs.scrollTop = msgs.scrollHeight;
     return d;
   }
+  function chip(query) {
+    const d = document.createElement("div");
+    d.className = "search-chip";
+    d.innerHTML = `<span class="globe">🌐</span> Pesquisou na web: <b>${esc(query)}</b>`;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 
-  // efeito máquina de escrever sobre HTML já formatado
+  // máquina de escrever sobre HTML formatado
   function typewrite(el, html) {
     el.innerHTML = "";
     const tmp = document.createElement("div");
@@ -433,7 +552,7 @@
     })(tmp, el);
     let qi = 0, ci = 0;
     (function tick() {
-      let budget = 3; // chars por frame
+      let budget = 4;
       while (budget-- > 0 && qi < queue.length) {
         const item = queue[qi];
         item.tn.textContent += item.text[ci++] ?? "";
@@ -449,6 +568,8 @@
   ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
   $("sendBtn").onclick = send;
 
+  const statuses = ["pensando...", "analisando sua pergunta...", "consultando a web se necessário...", "organizando a resposta..."];
+
   async function send() {
     const text = ta.value.trim();
     if (!text || $("sendBtn").disabled) return;
@@ -457,15 +578,32 @@
     bubble("me", esc(text));
     history.push({ role: "user", content: text });
 
-    const wait = bubble("ai", '<div class="typing"><i></i><i></i><i></i></div>');
+    const wait = bubble("ai",
+      '<div class="thinking"><div class="typing"><i></i><i></i><i></i></div><span class="status-text" id="st">pensando...</span></div>');
+    let si = 0;
+    const cycler = setInterval(() => {
+      const st = wait.querySelector(".status-text");
+      if (st) { si = (si+1) % statuses.length; st.textContent = statuses[si]; st.style.animation = "none"; void st.offsetWidth; st.style.animation = ""; }
+    }, 2600);
+
     $("sendBtn").disabled = true;
     try {
       const { data, error } = await supabase.functions.invoke("chat", { body: { messages: history } });
       if (error) throw error;
       if (data.error) throw new Error(typeof data.error === "string" ? data.error : "Erro no servidor de IA");
-      typewrite(wait, md(data.reply));
+      clearInterval(cycler);
+      // mostra chips das buscas feitas
+      if (data.searches?.length) {
+        wait.remove();
+        for (const q of data.searches) chip(q);
+        const ans = bubble("ai", "");
+        typewrite(ans, md(data.reply));
+      } else {
+        typewrite(wait, md(data.reply));
+      }
       history.push({ role: "assistant", content: data.reply });
     } catch (e) {
+      clearInterval(cycler);
       wait.remove();
       $("chatErr").textContent = "⚠ " + (e.message || "Falha na conexão. Tente de novo.");
     } finally {
