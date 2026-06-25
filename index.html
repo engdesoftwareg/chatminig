@@ -322,7 +322,10 @@
       <div class="form">
         <div class="tabs">
           <button id="tabLogin" class="active">Entrar</button>
-          <button id="tabSignup">Criar conta</button>
+          <button id="tabSignup" disabled title="Cadastros encerrados">Criar conta</button>
+        </div>
+        <div style="background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.25);color:#fbbf24;font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:14px;text-align:center;">
+          🔒 <b>Cadastros encerrados.</b> Apenas usuários convidados podem entrar.
         </div>
         <div class="field"><input id="email" type="email" placeholder="seu@email.com" autocomplete="email" /></div>
         <div class="field"><input id="password" type="password" placeholder="Sua senha" autocomplete="current-password" /></div>
@@ -632,8 +635,12 @@
   }
 
   /* ========== abas/auth ========== */
+  // Signups desabilitados — apenas usuários existentes podem entrar
+  const SIGNUPS_ENABLED = false;
   $("tabLogin").onclick = () => setMode("login");
-  $("tabSignup").onclick = () => setMode("signup");
+  $("tabSignup").onclick = () => {
+    feedback("Cadastros encerrados. Apenas usuários convidados podem entrar.", false);
+  };
   function setMode(m) {
     mode = m;
     $("tabLogin").classList.toggle("active", m==="login");
@@ -652,9 +659,11 @@
     if (!email || !password) return feedback("Preencha email e senha.");
     $("authBtn").disabled = true;
     try {
-      const res = mode === "login"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+      // Bloqueia signUp no frontend mesmo se o usuário tentar forçar
+      if (mode === "signup" || !SIGNUPS_ENABLED) {
+        return feedback("Cadastros encerrados. Apenas usuários convidados podem entrar.");
+      }
+      const res = await supabase.auth.signInWithPassword({ email, password });
       if (res.error) {
         const m = res.error.message;
         feedback(
