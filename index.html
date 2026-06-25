@@ -660,7 +660,7 @@
     $("authBtn").disabled = true;
     try {
       // Bloqueia signUp no frontend mesmo se o usuário tentar forçar
-      if (mode === "signup" || !SIGNUPS_ENABLED) {
+      if (mode === "signup" && !SIGNUPS_ENABLED) {
         return feedback("Cadastros encerrados. Apenas usuários convidados podem entrar.");
       }
       const res = await supabase.auth.signInWithPassword({ email, password });
