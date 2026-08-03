@@ -1,43 +1,43 @@
 # chatminig
 
-Aplicação web de chat com IA, com autenticação de usuários e resposta em áudio.
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-O projeto foi criado para praticar front-end sem framework, integração com backend gerenciado e consumo de APIs de modelos de linguagem de forma segura.
+**[▶ Live demo](https://engdesoftwareg.github.io/chatminig/)** · [Versão em português](README.pt-BR.md)
 
-Demo: https://engdesoftwareg.github.io/chatminig/
+AI chat web application with user authentication and spoken replies.
 
-## Telas
+Built to practise front-end without a framework, integration with a managed backend, and consuming language-model APIs safely.
 
-Tela de login
+## Screens
 
-![Tela de login do chatminig](screenshot-login.png)
+Login screen
 
-Interface de conversa
+![chatminig login screen](screenshot-login.png)
 
-![Interface de conversa do chatminig](screenshot-chat.png)
+Conversation interface
 
-## Funcionalidades
+![chatminig conversation interface](screenshot-chat.png)
 
-Login e cadastro por e-mail e senha, com sessão persistente e logout.
-Interface de conversa em tempo real, com histórico enviado ao modelo para manter contexto.
-Conversão das respostas em áudio (text-to-speech).
-Controle de cadastro: o registro de novos usuários pode ser bloqueado sem afetar quem já tem conta.
+## Features
 
-## Tecnologias
+- Email and password sign-up and sign-in, with a persistent session and logout
+- Real-time conversation interface, sending the history to the model to preserve context
+- Text-to-speech conversion of the replies
+- Sign-up control: new registrations can be blocked without affecting existing accounts
 
-HTML, CSS e JavaScript puro (sem framework), em arquivo único.
-Supabase para autenticação.
-Supabase Edge Functions para as rotas de chat e de síntese de voz.
-SDK supabase-js carregado via ESM.
+## Architecture decision
 
-## Decisão de arquitetura
+Calls to the language model and to the speech service do **not** happen in the browser: they go through Edge Functions.
 
-As chamadas ao modelo de linguagem e ao serviço de voz não acontecem no navegador: elas passam por Edge Functions.
-Assim as chaves de API ficam no servidor e nunca são expostas no código do cliente.
+That keeps API keys on the server, never exposed in client-side code. The key that does appear in `index.html` is the Supabase publishable key, designed for browser use and protected by row-level security on the database.
 
-## Como executar
+## Tech
 
-Clone o repositório e abra o arquivo `index.html` no navegador, ou sirva a pasta com qualquer servidor estático:
+HTML, CSS and vanilla JavaScript (no framework), in a single file · Supabase for authentication · Supabase Edge Functions for the chat and speech routes · supabase-js SDK loaded over ESM
+
+## Running it
+
+Clone the repository and open `index.html` in a browser, or serve the folder with any static server:
 
 ```bash
 git clone https://github.com/engdesoftwareg/chatminig.git
@@ -45,16 +45,20 @@ cd chatminig
 python -m http.server 8000
 ```
 
-Depois acesse `http://localhost:8000`.
+Then open `http://localhost:8000`.
 
-Para usar com o seu próprio backend, configure um projeto no Supabase, publique as funções `chat` e `tts` e ajuste a URL e a chave pública no início do `index.html`.
+To use it with your own backend, create a Supabase project, deploy the `chat` and `tts` functions and adjust the URL and publishable key at the top of `index.html`.
 
-## Estrutura
+## Structure
 
 ```
-index.html    aplicação completa (markup, estilos e lógica)
+index.html    the whole application (markup, styles and logic)
 ```
 
-## Licença
+## Current state
+
+This is the oldest project in the portfolio and **has no automated tests or CI** — unlike the other repositories here. The application works and is deployed, but it carries no safety net. Extracting the logic out of the single file and covering it with tests is the next step.
+
+## License
 
 MIT
