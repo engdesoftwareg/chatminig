@@ -1,6 +1,8 @@
 # chatminig
 
 
+[![ci](https://github.com/engdesoftwareg/chatminig/actions/workflows/ci.yml/badge.svg)](https://github.com/engdesoftwareg/chatminig/actions/workflows/ci.yml)
+
 [English version](README.md)
 
 Aplicação web de chat com IA, com autenticação de usuários e resposta em áudio.
@@ -55,8 +57,25 @@ Para usar com o seu próprio backend, configure um projeto no Supabase, publique
 ## Estrutura
 
 ```
-index.html    aplicação completa (markup, estilos e lógica)
+index.html          interface, estilos e integração
+lib/markdown.js     conversão de Markdown em HTML e em texto puro
+tests/              testes automatizados (vitest)
 ```
+
+## Testes
+
+```bash
+npm install
+npm test
+```
+
+**21 testes** cobrindo o módulo que transforma a resposta do modelo em HTML — a fronteira de segurança da aplicação, já que o texto vem de uma IA que lê páginas da internet.
+
+Cobrem escape de HTML, blocos de código, links, listas, separação de parágrafos e a conversão para texto puro usada pela síntese de voz. E, principalmente, cobrem os ataques que essa camada precisa barrar: tags `<script>`, atributos de evento, links `javascript:` e URL tentando fechar o atributo `href` para injetar um manipulador.
+
+**Uma vulnerabilidade real foi encontrada ao escrever esses testes.** A função de escape tratava `&`, `<` e `>`, mas não aspas — e a URL do link é inserida dentro de `href="..."`. Uma URL com aspa dupla fechava o atributo e transformava o restante em manipulador de evento no próprio link. Como as respostas vêm de um modelo que lê páginas da web, uma página maliciosa poderia fazer esse link ser reproduzido no chat. Corrigido escapando as aspas, com teste de regressão.
+
+O CI roda os testes a cada push.
 
 ## Licença
 

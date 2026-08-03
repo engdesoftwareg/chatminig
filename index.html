@@ -362,6 +362,7 @@
 <script type="module">
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
   import * as THREE from "https://esm.sh/three@0.160.0";
+  import { esc, md, toPlain } from "./lib/markdown.js";
 
   // ===== CONFIG =====
   const SUPABASE_URL = "https://gdryogwjzaaacpwkrihv.supabase.co";
@@ -619,21 +620,6 @@
   makeOrb("orbMini", 220, 38, .55, () => !$("chatView").classList.contains("hidden"));
 
   /* ========== markdown leve ========== */
-  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-  function md(text) {
-    let t = esc(text);
-    t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c)=>`<pre><code>${c.trim()}</code></pre>`);
-    t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-    t = t.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    t = t.replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>");
-    t = t.replace(/((?:^[-*•] .*\n?)+)/gm, m =>
-      "<ul>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^[-*•] /,"")}</li>`).join("") + "</ul>");
-    t = t.replace(/((?:^\d+[.)] .*\n?)+)/gm, m =>
-      "<ol>" + m.trim().split(/\n/).map(l=>`<li>${l.replace(/^\d+[.)] /,"")}</li>`).join("") + "</ol>");
-    return t.split(/\n{2,}/).map(p => /^<(ul|ol|pre)/.test(p.trim()) ? p : `<p>${p.replace(/\n/g,"<br>")}</p>`).join("");
-  }
-
   /* ========== abas/auth ========== */
   // Signups desabilitados — apenas usuários existentes podem entrar
   const SIGNUPS_ENABLED = false;
@@ -766,17 +752,6 @@
     bubbleEl.appendChild(btn);
   }
   // texto puro pra voz (remove markdown/links)
-  function toPlain(mdText) {
-    return mdText
-      .replace(/```[\s\S]*?```/g, " (trecho de código) ")
-      .replace(/`([^`]+)`/g, "$1")
-      .replace(/\[([^\]]+)\]\(https?:[^)]+\)/g, "$1")
-      .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/^#{1,4} /gm, "")
-      .replace(/^[-*•] /gm, "")
-      .trim();
-  }
-
   function typewrite(el, html, onDone) {
     el.innerHTML = "";
     const tmp = document.createElement("div");

@@ -1,5 +1,6 @@
 # chatminig
 
+[![ci](https://github.com/engdesoftwareg/chatminig/actions/workflows/ci.yml/badge.svg)](https://github.com/engdesoftwareg/chatminig/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[▶ Live demo](https://engdesoftwareg.github.io/chatminig/)** · [Versão em português](README.pt-BR.md)
@@ -55,9 +56,20 @@ To use it with your own backend, create a Supabase project, deploy the `chat` an
 index.html    the whole application (markup, styles and logic)
 ```
 
-## Current state
+## Tests
 
-This is the oldest project in the portfolio and **has no automated tests or CI** — unlike the other repositories here. The application works and is deployed, but it carries no safety net. Extracting the logic out of the single file and covering it with tests is the next step.
+```bash
+npm install
+npm test
+```
+
+**21 tests** covering the module that turns model output into HTML — the app's security boundary, since the text comes from an AI reading pages on the internet.
+
+They cover HTML escaping, code blocks, links, lists, paragraph splitting, and the conversion to plain text used by the speech synthesis. Most importantly, they cover the attacks this layer must stop: `<script>` tags, event attributes, `javascript:` links, and a URL trying to close the `href` attribute to inject a handler.
+
+**A real vulnerability was found while writing these tests.** The escaping function handled `&`, `<` and `>` but not quotes — and the link URL is placed inside `href="..."`. A URL containing a double quote closed the attribute and turned the rest into an event handler on the link. Since replies come from a model that reads web pages, a malicious page could get that link reproduced in the chat. Fixed by escaping quotes, with a regression test.
+
+CI runs the tests on every push.
 
 ## License
 
